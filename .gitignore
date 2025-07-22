@@ -1,0 +1,45 @@
+# Python cache and compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+
+# VS Code settings (optional)
+.vscode/
+
+# Environment variables
+.env
+
+# Jupyter Notebook checkpoints (if any)
+.ipynb_checkpoints/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Test artifacts (if any)
+*.pytest_cache/
+.cache/
+
+# Local data / temporary files (if you use it)
+*.db
+*.sqlite
+
+# Coverage reports (if you run tests)
+htmlcov/
+.coverage
+.tox/
+
+# Ignore model checkpoints or embeddings (if using LangChain local storage)
+*.ckpt
+*.pt
+*.bin
+
+# Ignore any folder named "__pycache__" in subdirs
+**/__pycache__/
