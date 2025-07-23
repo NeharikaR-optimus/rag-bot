@@ -334,3 +334,6 @@ cache/
 
 # Jupyter notebooks with output
 *.ipynb
+
+# Legacy project directories (to be removed)
+rag-langraph-bot/
