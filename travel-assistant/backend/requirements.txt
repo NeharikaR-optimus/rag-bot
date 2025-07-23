@@ -7,7 +7,6 @@ langchain
 langchain-openai
 langchain-core
 langchain-community
-langchain-text-splitters
 langgraph
 azure-search-documents
 azure-storage-blob
@@ -15,5 +14,4 @@ azure-cosmos
 azure-identity
 tiktoken
 pydantic
-asyncio
 numpy

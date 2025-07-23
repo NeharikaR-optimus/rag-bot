@@ -28,8 +28,6 @@ share/python-wheels/
 MANIFEST
 
 # PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
 
@@ -85,13 +83,9 @@ ipython_config.py
 .python-version
 
 # pipenv
-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
-#   However, in case of collaboration, if having platform-specific dependencies or dependencies
-#   having no cross-platform support, pipenv may install dependencies that don't work, or not
-#   install all needed dependencies.
 #Pipfile.lock
 
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow
+# PEP 582
 __pypackages__/
 
 # Celery stuff
@@ -103,6 +97,9 @@ celerybeat.pid
 
 # Environments
 .env
+.env.local
+.env.development
+.env.production
 .venv
 env/
 venv/
@@ -128,12 +125,13 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# IDEs
+# IDEs and Editors
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+*.code-workspace
 
 # OS generated files
 .DS_Store
@@ -143,8 +141,6 @@ dmypy.json
 .Trashes
 ehthumbs.db
 Thumbs.db
-
-# Windows
 desktop.ini
 $RECYCLE.BIN/
 
@@ -154,11 +150,14 @@ $RECYCLE.BIN/
 *.crt
 *.p12
 *.pfx
+azure.json
+credentials.json
 
-# Local configuration files
+# Configuration files with sensitive data
 config.local.json
 secrets.json
-local_settings.py
+.azure/
+.aws/
 
 # Logs and temporary files
 *.log
@@ -167,36 +166,66 @@ local_settings.py
 logs/
 temp/
 tmp/
+*.log.*
+
+# Travel Assistant - Backend specific
+backend/.env
+backend/logs/
+backend/temp/
+backend/uploads/
+backend/downloads/
+backend/cache/
+
+# Travel Assistant - Frontend specific  
+frontend/.streamlit/secrets.toml
+frontend/logs/
+frontend/temp/
+
+# Travel Assistant - Workflows
+workflows/logs/
+workflows/temp/
+workflows/cache/
+
+# Travel Assistant - Tools cache
+tools/cache/
+tools/temp/
 
 # Streamlit
 .streamlit/
+.streamlit/secrets.toml
 
 # FastAPI
-__pycache__/
 *.pyc
+uvicorn.log
 
 # Database files
 *.db
 *.sqlite
 *.sqlite3
+*.db-journal
 
 # Backup files
 *.bak
 *.backup
+*_backup*
 
-# Node modules (if any)
+# Node modules (if any frontend JS dependencies)
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+package-lock.json
+yarn.lock
 
 # Coverage reports
 htmlcov/
 .coverage
 coverage.xml
+*.cover
 
 # Pytest
 .pytest_cache/
+.cache/
 
 # Azure Functions
 local.settings.json
@@ -206,45 +235,102 @@ obj/
 # LangChain/LangGraph specific
 .langchain/
 .langgraph/
+.langchain_cache/
+.langgraph_cache/
 
-# Model files (if storing locally)
+# AI Model files (if storing locally)
 *.model
 *.bin
 *.safetensors
+models/
+model_cache/
 
 # Large data files
 *.csv
 *.json.gz
 *.parquet
+data/raw/
+data/processed/
+
+# Document storage (if not needed in repo)
+documents/uploads/
+documents/temp/
 
 # Personal notes and drafts
 notes.md
 draft/
 scratch/
+TODO.md
+NOTES.md
 
 # Build artifacts
 build/
 dist/
 *.egg-info/
+.eggs/
 
 # Conda
 *.conda
 *.tar.bz2
+.conda/
 
 # Virtual environments
-.conda/
 .venv/
 venv*/
 env*/
+.env*/
 
 # Package files
 *.whl
 *.tar.gz
 
-# Editor backups
+# Editor backups and temporary files
 *~
 *.swp
 *.swo
+.#*
+\#*#
 
-# Project-specific
-# Add any project-specific files you want to ignore
+# Testing artifacts
+.tox/
+.coverage
+.cache
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Memory dumps
+*.heapsnapshot
+
+# Local development overrides
+docker-compose.override.yml
+.env.override
+
+# Travel Assistant specific temp files
+backend/temp_documents/
+frontend/temp_files/
+workflows/temp_states/
+
+# Session storage
+sessions/
+.sessions/
+
+# Cache directories
+.cache/
+cache/
+.tmp/
+
+# Development tools
+.mypy_cache/
+.ruff_cache/
+.black_cache/
+
+# Jupyter notebooks with output
+*.ipynb
