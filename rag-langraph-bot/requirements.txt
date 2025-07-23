@@ -8,8 +8,12 @@ langchain-openai
 langchain-core
 langchain-community
 langchain-text-splitters
-faiss-cpu
-tiktoken
+langgraph
+azure-search-documents
+azure-storage-blob
+azure-cosmos
 azure-identity
+tiktoken
 pydantic
 asyncio
+numpy
