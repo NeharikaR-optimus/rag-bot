@@ -21,10 +21,10 @@ class Config:
     AZURE_SEARCH_INDEX_NAME = os.getenv("AZURE_SEARCH_INDEX_NAME", "travel-documents")
     
     # Cosmos DB Configuration
-    COSMOS_DB_ENDPOINT = os.getenv("COSMOS_DB_ENDPOINT")
-    COSMOS_DB_KEY = os.getenv("COSMOS_DB_KEY")
-    COSMOS_DB_DATABASE_NAME = os.getenv("COSMOS_DB_DATABASE_NAME", "travel_knowledge")
-    COSMOS_DB_CONTAINER_NAME = os.getenv("COSMOS_DB_CONTAINER_NAME", "conversations")
+    COSMOS_ENDPOINT = os.getenv("COSMOS_DB_ENDPOINT")
+    COSMOS_KEY = os.getenv("COSMOS_DB_KEY")
+    COSMOS_DATABASE_NAME = os.getenv("COSMOS_DB_DATABASE_NAME", "travel_knowledge")
+    COSMOS_CONTAINER_NAME = os.getenv("COSMOS_DB_CONTAINER_NAME", "conversations")
     
     # Backend Configuration
     BACKEND_HOST = os.getenv("BACKEND_HOST", "localhost")

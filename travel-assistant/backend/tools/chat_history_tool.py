@@ -20,9 +20,9 @@ class ChatHistoryManager:
     def _initialize(self):
         """Initialize Cosmos DB client."""
         try:
-            self.client = CosmosClient(Config.COSMOS_DB_ENDPOINT, Config.COSMOS_DB_KEY)
-            self.database_name = Config.COSMOS_DB_DATABASE_NAME
-            self.container_name = Config.COSMOS_DB_CONTAINER_NAME
+            self.client = CosmosClient(Config.COSMOS_ENDPOINT, Config.COSMOS_KEY)
+            self.database_name = Config.COSMOS_DATABASE_NAME
+            self.container_name = Config.COSMOS_CONTAINER_NAME
         except Exception as e:
             logger.error(f"Failed to initialize Chat History Manager: {e}")
             raise

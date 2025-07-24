@@ -8,13 +8,13 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import tool
 from langchain_core.messages import AIMessage
 from langchain_openai import AzureChatOpenAI
-from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import StateGraph, MessagesState, END
 from langgraph.prebuilt import ToolNode
 
 from config import Config
 from tools.chat_history_tool import ChatHistoryManager
 from tools.doc_search_tool import doc_search_tool
+from tools.checkpoint_tool import CheckpointManager
 from utils.prompts import TRAVEL_ASSISTANT_SYSTEM_PROMPT, DOCUMENT_SEARCH_PROMPT, LOG_MESSAGES
 
 load_dotenv()
@@ -48,6 +48,14 @@ def search_documents(query: str) -> str:
 
 class TravelAssistantWorkflow:
     """Main workflow class for travel assistant using LangGraph."""
+    
+    # Class variable to store session context
+    _current_session_id = "default_session"
+    
+    @classmethod
+    def set_session_id(cls, session_id: str):
+        """Set the current session ID for conversation storage."""
+        cls._current_session_id = session_id
     
     @classmethod
     def filter_messages(cls, messages: list):
@@ -131,56 +139,51 @@ class TravelAssistantWorkflow:
                 except Exception as e:
                     logger.error(f"Error in call_final_model: {e}")
                     raise e
-                    
-                    chain = (
-                        ChatPromptTemplate.from_messages([
-                            ("system", final_prompt),
-                            ("placeholder", "{messages}")
-                        ])
-                        | llm_with_tools
-                    )
-                    
-                    response = await chain.ainvoke({"messages": filtered_messages})
-                    return {"messages": [response]}
+            
+            conversation_context = {'session_id': cls._current_session_id}
             
             async def store_chat_history_tool(state: dict):
-                """Store chat history using tool-like pattern."""
+                """Store full conversation history in Cosmos DB."""
                 try:
-                    conversation_id = "default_session"
+                    conversation_id = cls._current_session_id
                     messages = state.get("messages", [])
                     
-                    if messages:
+                    if len(messages) >= 2:
                         chat_history = ChatHistoryManager()
+                        user_message = None
+                        assistant_message = None
                         
-                        recent_messages = messages[-3:]
-                        summary_parts = []
-                        
-                        for msg in recent_messages:
+                        for i in range(len(messages) - 1, -1, -1):
+                            msg = messages[i]
                             if hasattr(msg, 'content') and msg.content:
-                                role = "User" if hasattr(msg, 'type') and msg.type == 'human' else "Assistant"
-                                content = msg.content[:100] + "..." if len(msg.content) > 100 else msg.content
-                                summary_parts.append(f"{role}: {content}")
+                                if hasattr(msg, 'type') and msg.type == 'ai' and assistant_message is None:
+                                    assistant_message = msg.content
+                                elif hasattr(msg, 'type') and msg.type == 'human' and user_message is None:
+                                    user_message = msg.content
+                                    
+                                if user_message and assistant_message:
+                                    break
                         
-                        if summary_parts:
-                            summary = " | ".join(summary_parts)
-                            
+                        if user_message and assistant_message:
                             await chat_history.store_message(
                                 session_id=conversation_id,
-                                user_message="Conversation Summary",
-                                assistant_response=f"Travel conversation summary: {summary}",
+                                user_message=user_message,
+                                assistant_response=assistant_message,
                                 metadata={
                                     "timestamp": datetime.now().isoformat(),
-                                    "type": "travel_summary",
+                                    "type": "full_conversation",
                                     "message_count": len(messages)
                                 }
                             )
                             
-                            logger.info(f"Stored travel conversation history for: {conversation_id}")
+                            logger.info(f"Stored full conversation for session: {conversation_id}")
+                            logger.info(f"User: {user_message[:100]}...")
+                            logger.info(f"Assistant: {assistant_message[:100]}...")
                     
                     return state
                             
                 except Exception as e:
-                    logger.warning(f"Failed to store travel conversation history: {e}")
+                    logger.warning(f"Failed to store conversation history: {e}")
                     return state
             
             workflow = StateGraph(MessagesState)
@@ -207,12 +210,14 @@ class TravelAssistantWorkflow:
             raise ex
     
     @classmethod
-    async def invoke_graph_workflow(cls, request: dict = None):
+    async def invoke_graph_workflow(cls, request: dict = None, session_id: str = None):
         """Create and return the compiled workflow graph with checkpointer."""
         try:
+            if session_id:
+                cls.set_session_id(session_id)
+                
             workflow = await cls.get_workflow_graph()
-            
-            checkpointer = MemorySaver()
+            checkpointer = CheckpointManager()
             
             return workflow.compile(checkpointer=checkpointer)
             

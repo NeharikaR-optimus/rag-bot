@@ -54,43 +54,34 @@ async def chat_stream_endpoint(request: ChatRequest):
         try:
             session_id = request.session_id or str(uuid.uuid4())
             
-            # Get the compiled workflow
-            workflow = await TravelAssistantWorkflow.invoke_graph_workflow({})
-            
-            # Prepare the input state
+            workflow = await TravelAssistantWorkflow.invoke_graph_workflow({}, session_id=session_id)
             config_dict = {"configurable": {"thread_id": session_id}}
             
-            # Create the message for the workflow
             from langchain_core.messages import HumanMessage
             input_state = {
                 "messages": [HumanMessage(content=request.message)]
             }
             
-            # Use astream to get real-time streaming from the workflow
             async for event in workflow.astream(input_state, config=config_dict):
                 for node_name, node_output in event.items():
-                    # Look for final model responses (the main content we want to stream)
                     if node_name in ["final_model", "brain"] and "messages" in node_output:
                         messages = node_output["messages"]
                         if messages:
                             last_message = messages[-1]
                             if hasattr(last_message, 'content') and last_message.content:
                                 content = last_message.content
-                                
-                                # Stream content in chunks that preserve markdown formatting
-                                # Split by lines and sections to maintain structure
                                 lines = content.split('\n')
                                 
                                 for line in lines:
-                                    if line.strip():  # Non-empty lines
+                                    if line.strip():
                                         chunk_data = StreamChunk(
                                             content=line + '\n',
                                             done=False,
                                             session_id=session_id
                                         )
                                         yield f"data: {chunk_data.model_dump_json()}\n\n"
-                                        await asyncio.sleep(0.15)  # Pause between lines for readability
-                                    else:  # Empty lines (paragraph breaks)
+                                        await asyncio.sleep(0.15)
+                                    else:
                                         chunk_data = StreamChunk(
                                             content='\n',
                                             done=False,
@@ -98,14 +89,7 @@ async def chat_stream_endpoint(request: ChatRequest):
                                         )
                                         yield f"data: {chunk_data.model_dump_json()}\n\n"
                                         await asyncio.sleep(0.05)
-                                
-                                # Once we've streamed the main response, we can break
                                 break
-                    
-                    # Also handle tool outputs for transparency (optional)
-                    elif node_name == "tools" and "messages" in node_output:
-                        # You could stream tool usage info here if desired
-                        pass
             
             # Send completion signal
             completion_chunk = StreamChunk(
@@ -116,7 +100,6 @@ async def chat_stream_endpoint(request: ChatRequest):
             yield f"data: {completion_chunk.model_dump_json()}\n\n"
             
         except Exception as e:
-            print(f"Error in LangGraph streaming chat: {str(e)}")
             error_chunk = StreamChunk(
                 content=f"Error: {str(e)}",
                 done=True,
@@ -140,22 +123,16 @@ async def chat_endpoint(request: ChatRequest) -> ChatResponse:
     try:
         session_id = request.session_id or str(uuid.uuid4())
         
-        # Get the compiled workflow
         workflow = await TravelAssistantWorkflow.invoke_graph_workflow({})
-        
-        # Prepare the input state
         config_dict = {"configurable": {"thread_id": session_id}}
         
-        # Create the message for the workflow
         from langchain_core.messages import HumanMessage
         input_state = {
             "messages": [HumanMessage(content=request.message)]
         }
         
-        # Execute the workflow
         final_state = await workflow.ainvoke(input_state, config=config_dict)
         
-        # Extract the response from the final state
         response_text = ""
         if "messages" in final_state and final_state["messages"]:
             last_message = final_state["messages"][-1]
@@ -171,7 +148,6 @@ async def chat_endpoint(request: ChatRequest) -> ChatResponse:
         )
     
     except Exception as e:
-        print(f"Error processing LangGraph chat: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing chat: {str(e)}")
 
 @app.get("/")
