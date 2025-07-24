@@ -49,7 +49,7 @@ async def health_check():
 
 @app.post("/chat/stream")
 async def chat_stream_endpoint(request: ChatRequest):
-    """Streaming chat endpoint using LangGraph workflow."""
+    """Streaming chat endpoint using LangGraph workflow with real streaming."""
     async def generate_stream():
         try:
             session_id = request.session_id or str(uuid.uuid4())
@@ -66,29 +66,46 @@ async def chat_stream_endpoint(request: ChatRequest):
                 "messages": [HumanMessage(content=request.message)]
             }
             
-            # Stream the workflow execution
-            full_response = ""
-            
+            # Use astream to get real-time streaming from the workflow
             async for event in workflow.astream(input_state, config=config_dict):
-                # Extract response content from workflow events
                 for node_name, node_output in event.items():
-                    if "messages" in node_output and node_output["messages"]:
-                        last_message = node_output["messages"][-1]
-                        if hasattr(last_message, 'content') and last_message.content:
-                            # Stream the content incrementally
-                            content = last_message.content
-                            if content not in full_response:
-                                new_content = content[len(full_response):]
-                                full_response = content
+                    # Look for final model responses (the main content we want to stream)
+                    if node_name in ["final_model", "brain"] and "messages" in node_output:
+                        messages = node_output["messages"]
+                        if messages:
+                            last_message = messages[-1]
+                            if hasattr(last_message, 'content') and last_message.content:
+                                content = last_message.content
                                 
-                                if new_content:
-                                    chunk_data = StreamChunk(
-                                        content=new_content,
-                                        done=False,
-                                        session_id=session_id
-                                    )
-                                    yield f"data: {chunk_data.model_dump_json()}\n\n"
-                                    await asyncio.sleep(0.01)
+                                # Stream content in chunks that preserve markdown formatting
+                                # Split by lines and sections to maintain structure
+                                lines = content.split('\n')
+                                
+                                for line in lines:
+                                    if line.strip():  # Non-empty lines
+                                        chunk_data = StreamChunk(
+                                            content=line + '\n',
+                                            done=False,
+                                            session_id=session_id
+                                        )
+                                        yield f"data: {chunk_data.model_dump_json()}\n\n"
+                                        await asyncio.sleep(0.15)  # Pause between lines for readability
+                                    else:  # Empty lines (paragraph breaks)
+                                        chunk_data = StreamChunk(
+                                            content='\n',
+                                            done=False,
+                                            session_id=session_id
+                                        )
+                                        yield f"data: {chunk_data.model_dump_json()}\n\n"
+                                        await asyncio.sleep(0.05)
+                                
+                                # Once we've streamed the main response, we can break
+                                break
+                    
+                    # Also handle tool outputs for transparency (optional)
+                    elif node_name == "tools" and "messages" in node_output:
+                        # You could stream tool usage info here if desired
+                        pass
             
             # Send completion signal
             completion_chunk = StreamChunk(
