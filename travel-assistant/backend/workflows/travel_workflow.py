@@ -6,6 +6,7 @@ from typing import Dict, Any, List, Optional, TypedDict
 from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import tool
+from langchain_core.messages import AIMessage
 from langchain_openai import AzureChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import StateGraph, MessagesState, END
@@ -59,6 +60,7 @@ class TravelAssistantWorkflow:
         """Create and return the uncompiled workflow graph."""
         try:
             config = Config()
+            
             llm = AzureChatOpenAI(
                 openai_api_key=config.AZURE_OPENAI_API_KEY,
                 azure_endpoint=config.AZURE_OPENAI_ENDPOINT,
@@ -129,6 +131,17 @@ class TravelAssistantWorkflow:
                 except Exception as e:
                     logger.error(f"Error in call_final_model: {e}")
                     raise e
+                    
+                    chain = (
+                        ChatPromptTemplate.from_messages([
+                            ("system", final_prompt),
+                            ("placeholder", "{messages}")
+                        ])
+                        | llm_with_tools
+                    )
+                    
+                    response = await chain.ainvoke({"messages": filtered_messages})
+                    return {"messages": [response]}
             
             async def store_chat_history_tool(state: dict):
                 """Store chat history using tool-like pattern."""
@@ -194,10 +207,10 @@ class TravelAssistantWorkflow:
             raise ex
     
     @classmethod
-    async def invoke_graph_workflow(cls, request: dict):
+    async def invoke_graph_workflow(cls, request: dict = None):
         """Create and return the compiled workflow graph with checkpointer."""
         try:
-            workflow = await cls.GetWorkflowGraph()
+            workflow = await cls.get_workflow_graph()
             
             checkpointer = MemorySaver()
             
@@ -207,14 +220,13 @@ class TravelAssistantWorkflow:
             logger.error(f"Error during travel workflow setup: {ex}")
             raise ex
 
-    def get_workflow_graph(self):
-        """Legacy method - creates and returns compiled workflow with checkpointer."""
+    @classmethod
+    def get_compiled_workflow(cls):
+        """Get compiled workflow - static/class method version."""
         import asyncio
         try:
             loop = asyncio.get_event_loop()
-            return loop.run_until_complete(self.InvokeGraphWorkflow({}))
+            return loop.run_until_complete(cls.invoke_graph_workflow())
         except RuntimeError:
-            workflow_coro = self.GetWorkflowGraph()
-            workflow = asyncio.run(workflow_coro)
-            checkpointer = MemorySaver()
-            return workflow.compile(checkpointer=checkpointer)
+            workflow_coro = cls.invoke_graph_workflow()
+            return asyncio.run(workflow_coro)

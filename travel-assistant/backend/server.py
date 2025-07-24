@@ -11,6 +11,7 @@ import json
 
 from config import Config
 from utils.prompts import LOG_MESSAGES, API_MESSAGES
+from workflows.travel_workflow import TravelAssistantWorkflow
 
 config = Config()
 
@@ -48,61 +49,48 @@ async def health_check():
 
 @app.post("/chat/stream")
 async def chat_stream_endpoint(request: ChatRequest):
-    """Streaming chat endpoint using Server-Sent Events."""
+    """Streaming chat endpoint using LangGraph workflow."""
     async def generate_stream():
         try:
             session_id = request.session_id or str(uuid.uuid4())
             
-            from tools.doc_search_tool import DocumentManagementTool
-            from tools.chat_history_tool import ChatHistoryManager
-            from tools.llm_tool import LLMTool
+            # Get the compiled workflow
+            workflow = await TravelAssistantWorkflow.invoke_graph_workflow({})
             
-            doc_tool = DocumentManagementTool()
-            history_tool = ChatHistoryManager()
-            llm_tool = LLMTool()
+            # Prepare the input state
+            config_dict = {"configurable": {"thread_id": session_id}}
             
-            conversation_history = []
-            try:
-                conversation_history = await history_tool.get_conversation_history(session_id, limit=5)
-            except Exception as e:
-                print(f"Warning: Could not retrieve chat history: {e}")
-                conversation_history = []
+            # Create the message for the workflow
+            from langchain_core.messages import HumanMessage
+            input_state = {
+                "messages": [HumanMessage(content=request.message)]
+            }
             
-            context = ""
-            try:
-                search_results = await doc_tool.semantic_search(request.message)
-                if search_results:
-                    context = f"Relevant travel information:\n{search_results}\n\n"
-            except Exception as e:
-                print(f"Warning: Could not retrieve search context: {e}")
-                context = ""
-            
+            # Stream the workflow execution
             full_response = ""
-            async for chunk in llm_tool.generate_streaming_response(
-                query=request.message,
-                context=context,
-                conversation_history=conversation_history
-            ):
-                if chunk:
-                    full_response += chunk
-                    chunk_data = StreamChunk(
-                        content=chunk,
-                        done=False,
-                        session_id=session_id
-                    )
-                    yield f"data: {chunk_data.model_dump_json()}\n\n"
-                    await asyncio.sleep(0.01)
             
-            try:
-                await history_tool.store_message(
-                    session_id=session_id,
-                    user_message=request.message,
-                    assistant_response=full_response,
-                    metadata={"streaming": True}
-                )
-            except Exception as e:
-                print(f"Warning: Could not store chat history: {e}")
+            async for event in workflow.astream(input_state, config=config_dict):
+                # Extract response content from workflow events
+                for node_name, node_output in event.items():
+                    if "messages" in node_output and node_output["messages"]:
+                        last_message = node_output["messages"][-1]
+                        if hasattr(last_message, 'content') and last_message.content:
+                            # Stream the content incrementally
+                            content = last_message.content
+                            if content not in full_response:
+                                new_content = content[len(full_response):]
+                                full_response = content
+                                
+                                if new_content:
+                                    chunk_data = StreamChunk(
+                                        content=new_content,
+                                        done=False,
+                                        session_id=session_id
+                                    )
+                                    yield f"data: {chunk_data.model_dump_json()}\n\n"
+                                    await asyncio.sleep(0.01)
             
+            # Send completion signal
             completion_chunk = StreamChunk(
                 content="",
                 done=True,
@@ -111,7 +99,7 @@ async def chat_stream_endpoint(request: ChatRequest):
             yield f"data: {completion_chunk.model_dump_json()}\n\n"
             
         except Exception as e:
-            print(f"Error in streaming chat: {str(e)}")
+            print(f"Error in LangGraph streaming chat: {str(e)}")
             error_chunk = StreamChunk(
                 content=f"Error: {str(e)}",
                 done=True,
@@ -131,47 +119,34 @@ async def chat_stream_endpoint(request: ChatRequest):
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat_endpoint(request: ChatRequest) -> ChatResponse:
-    """Main chat endpoint."""
+    """Main chat endpoint using LangGraph workflow."""
     try:
         session_id = request.session_id or str(uuid.uuid4())
         
-        from tools.doc_search_tool import DocumentManagementTool
-        from tools.chat_history_tool import ChatHistoryManager
-        from tools.llm_tool import LLMTool
+        # Get the compiled workflow
+        workflow = await TravelAssistantWorkflow.invoke_graph_workflow({})
         
-        doc_tool = DocumentManagementTool()
-        history_tool = ChatHistoryManager()
-        llm_tool = LLMTool()
+        # Prepare the input state
+        config_dict = {"configurable": {"thread_id": session_id}}
         
-        conversation_history = []
-        try:
-            conversation_history = await history_tool.get_conversation_history(session_id, limit=5)
-        except Exception:
-            conversation_history = []
+        # Create the message for the workflow
+        from langchain_core.messages import HumanMessage
+        input_state = {
+            "messages": [HumanMessage(content=request.message)]
+        }
         
-        context = ""
-        try:
-            search_results = await doc_tool.semantic_search(request.message)
-            if search_results:
-                context = f"Relevant travel information:\n{search_results}\n\n"
-        except Exception:
-            context = ""
+        # Execute the workflow
+        final_state = await workflow.ainvoke(input_state, config=config_dict)
         
-        response_text = await llm_tool.generate_response(
-            query=request.message,
-            context=context,
-            conversation_history=conversation_history
-        )
+        # Extract the response from the final state
+        response_text = ""
+        if "messages" in final_state and final_state["messages"]:
+            last_message = final_state["messages"][-1]
+            if hasattr(last_message, 'content'):
+                response_text = last_message.content
         
-        try:
-            await history_tool.store_message(
-                session_id=session_id,
-                user_message=request.message,
-                assistant_response=response_text,
-                metadata={"streaming": False}
-            )
-        except Exception:
-            pass
+        if not response_text:
+            response_text = "I apologize, but I couldn't generate a response. Please try again."
         
         return ChatResponse(
             response=response_text,
@@ -179,7 +154,7 @@ async def chat_endpoint(request: ChatRequest) -> ChatResponse:
         )
     
     except Exception as e:
-        print(f"Error processing chat: {str(e)}")
+        print(f"Error processing LangGraph chat: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing chat: {str(e)}")
 
 @app.get("/")

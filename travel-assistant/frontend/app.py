@@ -9,7 +9,7 @@ st.set_page_config(
     layout="wide"
 )
 
-API_BASE_URL = "http://localhost:8000"
+API_BASE_URL = "http://localhost:8080"
 
 if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
