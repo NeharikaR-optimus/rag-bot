@@ -1,0 +1,17 @@
+fastapi
+uvicorn[standard]
+streamlit
+requests
+python-dotenv
+langchain
+langchain-openai
+langchain-core
+langchain-community
+langgraph
+azure-search-documents
+azure-storage-blob
+azure-cosmos
+azure-identity
+tiktoken
+pydantic
+numpy

@@ -1,0 +1,339 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+#Pipfile.lock
+
+# PEP 582
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.env.local
+.env.development
+.env.production
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.code-workspace
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# Azure and API Keys
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+azure.json
+credentials.json
+
+# Configuration files with sensitive data
+config.local.json
+secrets.json
+.azure/
+.aws/
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+logs/
+temp/
+tmp/
+*.log.*
+
+# Travel Assistant - Backend specific
+backend/.env
+backend/logs/
+backend/temp/
+backend/uploads/
+backend/downloads/
+backend/cache/
+
+# Travel Assistant - Frontend specific  
+frontend/.streamlit/secrets.toml
+frontend/logs/
+frontend/temp/
+
+# Travel Assistant - Workflows
+workflows/logs/
+workflows/temp/
+workflows/cache/
+
+# Travel Assistant - Tools cache
+tools/cache/
+tools/temp/
+
+# Streamlit
+.streamlit/
+.streamlit/secrets.toml
+
+# FastAPI
+*.pyc
+uvicorn.log
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# Backup files
+*.bak
+*.backup
+*_backup*
+
+# Node modules (if any frontend JS dependencies)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Coverage reports
+htmlcov/
+.coverage
+coverage.xml
+*.cover
+
+# Pytest
+.pytest_cache/
+.cache/
+
+# Azure Functions
+local.settings.json
+bin/
+obj/
+
+# LangChain/LangGraph specific
+.langchain/
+.langgraph/
+.langchain_cache/
+.langgraph_cache/
+
+# AI Model files (if storing locally)
+*.model
+*.bin
+*.safetensors
+models/
+model_cache/
+
+# Large data files
+*.csv
+*.json.gz
+*.parquet
+data/raw/
+data/processed/
+
+# Document storage (if not needed in repo)
+documents/uploads/
+documents/temp/
+
+# Personal notes and drafts
+notes.md
+draft/
+scratch/
+TODO.md
+NOTES.md
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Conda
+*.conda
+*.tar.bz2
+.conda/
+
+# Virtual environments
+.venv/
+venv*/
+env*/
+.env*/
+
+# Package files
+*.whl
+*.tar.gz
+
+# Editor backups and temporary files
+*~
+*.swp
+*.swo
+.#*
+\#*#
+
+# Testing artifacts
+.tox/
+.coverage
+.cache
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Memory dumps
+*.heapsnapshot
+
+# Local development overrides
+docker-compose.override.yml
+.env.override
+
+# Travel Assistant specific temp files
+backend/temp_documents/
+frontend/temp_files/
+workflows/temp_states/
+
+# Session storage
+sessions/
+.sessions/
+
+# Cache directories
+.cache/
+cache/
+.tmp/
+
+# Development tools
+.mypy_cache/
+.ruff_cache/
+.black_cache/
+
+# Jupyter notebooks with output
+*.ipynb
+
+# Legacy project directories (to be removed)
+rag-langraph-bot/
